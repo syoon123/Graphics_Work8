@@ -77,6 +77,13 @@ def print_matrix( matrix ):
         s+= '\n'
     print s
 
+def copy_matrix( a ):
+    b = new_matrix()
+    for r in range( len(a) ):
+        for c in range( len(a) ):
+            b[c][r] = a[c][r]
+    return b
+    
 def ident( matrix ):
     for r in range( len( matrix[0] ) ):
         for c in range( len(matrix) ):

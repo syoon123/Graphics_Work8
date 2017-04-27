@@ -52,6 +52,12 @@ def parse_file( fname, edges, transform, screen, color ):
     f = open(fname)
     lines = f.readlines()
 
+    start = new_matrix();
+    ident(start);
+    stack = [start]
+    tmpP = []
+    tmpE = []
+
     step = 0.1
     c = 0
     while c < len(lines):
@@ -65,53 +71,74 @@ def parse_file( fname, edges, transform, screen, color ):
             
         if line == 'sphere':
             #print 'SPHERE\t' + str(args)
-            add_sphere(edges,
+            add_sphere(tmpP,
                        float(args[0]), float(args[1]), float(args[2]),
                        float(args[3]), step)
+            matrix_mult(stack[-1], tmpP)
+            draw_polygons(tmpP, screen, color)
+            tmpP = []
             
         elif line == 'torus':
             #print 'TORUS\t' + str(args)
-            add_torus(edges,
+            add_torus(tmpP,
                       float(args[0]), float(args[1]), float(args[2]),
                       float(args[3]), float(args[4]), step)
+            matrix_mult(stack[-1], tmpP)
+            draw_polygons(tmpP, screen, color)
+            tmpP = []
             
         elif line == 'box':
             #print 'BOX\t' + str(args)
-            add_box(edges,
+            add_box(tmpP,
                     float(args[0]), float(args[1]), float(args[2]),
                     float(args[3]), float(args[4]), float(args[5]))
+            matrix_mult(stack[-1], tmpP)
+            draw_polygons(tmpP, screen, color)
+            tmpP = []
             
         elif line == 'circle':
             #print 'CIRCLE\t' + str(args)
-            add_circle(edges,
+            add_circle(tmpE,
                        float(args[0]), float(args[1]), float(args[2]),
                        float(args[3]), step)
+            matrix_mult(stack[-1], tmpE)
+            draw_polygons(tmpE, screen, color)
+            tmpE = []
+            
 
         elif line == 'hermite' or line == 'bezier':
-            #print 'curve\t' + line + ": " + str(args)
-            add_curve(edges,
+            #print 'curve\t' + line + ": " + str(args)            
+            add_curve(tmpE,
                       float(args[0]), float(args[1]),
                       float(args[2]), float(args[3]),
                       float(args[4]), float(args[5]),
                       float(args[6]), float(args[7]),
-                      step, line)                      
+                      step, line)
+            matrix_mult(stack[-1], tmpE)
+            draw_polygons(tmpE, screen, color)
+            tmpE = []
             
         elif line == 'line':            
             #print 'LINE\t' + str(args)
 
-            add_edge( edges,
+            add_edge( tmpE,
                       float(args[0]), float(args[1]), float(args[2]),
                       float(args[3]), float(args[4]), float(args[5]) )
+            matrix_mult(stack[-1], tmpE)
+            draw_polygons(tmpE, screen, color)
+            tmpE = []
 
         elif line == 'scale':
             #print 'SCALE\t' + str(args)
             t = make_scale(float(args[0]), float(args[1]), float(args[2]))
-            matrix_mult(t, transform)
+            matrix_mult(stack[-1], t)
+            stack[-1] = t
 
         elif line == 'move':
             #print 'MOVE\t' + str(args)
             t = make_translate(float(args[0]), float(args[1]), float(args[2]))
-            matrix_mult(t, transform)
+            matrix_mult(stack[-1], t)
+            stack[-1] = t
 
         elif line == 'rotate':
             #print 'ROTATE\t' + str(args)
@@ -123,7 +150,14 @@ def parse_file( fname, edges, transform, screen, color ):
                 t = make_rotY(theta)
             else:
                 t = make_rotZ(theta)
-            matrix_mult(t, transform)
+            matrix_mult(stack[-1], t)
+            stack[-1] = t
+
+        elif line == 'push':
+            stack.append(copy_matrix(stack[-1]))
+
+        elif line == 'pop':
+            stack.pop()
                 
         elif line == 'clear':
             edges = []
@@ -135,8 +169,6 @@ def parse_file( fname, edges, transform, screen, color ):
             matrix_mult( transform, edges )
 
         elif line == 'display' or line == 'save':
-            clear_screen(screen)
-            draw_polygons(edges, screen, color)
 
             if line == 'display':
                 display(screen)
